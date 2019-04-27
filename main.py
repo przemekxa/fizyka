@@ -72,6 +72,7 @@ class Box:
 
     def detect_wall_collisions(self):
         """ Wykrywanie i obsługa zderzeń ze ścianami """
+        # TODO
         for p in self.particles:
 
             if p.x <= self.collisionDistance and p.v.x < 0:
@@ -142,7 +143,7 @@ b.create_particles(5)
 for p in b.particles:
     print(p)
 
-for _ in range(100):
+for _ in range(1000):
     b.simulate()
 
 print("\n")
