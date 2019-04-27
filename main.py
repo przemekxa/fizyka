@@ -142,9 +142,10 @@ b.create_particles(5)
 for p in b.particles:
     print(p)
 
-for _ in range(1000):
+for _ in range(100):
     b.simulate()
 
 print("\n")
+
 for p in b.particles:
     print(p)
