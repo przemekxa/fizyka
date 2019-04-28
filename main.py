@@ -1,6 +1,7 @@
 from __future__ import annotations
 import math
 import random
+import pygame
 
 
 class Vector:
@@ -94,10 +95,12 @@ class Box:
                     self.particles[i].collide_with(self.particles[j])
                 j += 1
 
-    def show_box(self):
+    def show_box(self, program_window):
         """ Pokazywanie pozycji cząsteczek w formie graficznej """
-        # TODO
-        return
+        program_window.fill((0, 0, 0))
+        for particle in self.particles:
+            pygame.draw.circle(program_window, (0, 255, 255), [int(particle.x), int(particle.y)], int(self.collisionDistance))
+        pygame.display.flip()
 
     def create_particles(self, n: int):
         """ Tworzenie n cząsteczek
@@ -110,7 +113,7 @@ class Box:
             p = Particle(random.random() * self.startWidth, random.random() * self.height, v)
             self.particles.append(p)
 
-    def simulate(self):
+    def simulate(self, program_window=None):
         """ Symulacja '1 sekundy' ruchu cząsteczek """
 
         # Przesunięcie cząsteczek o wektor
@@ -127,7 +130,7 @@ class Box:
         self.particles.sort(key=lambda particle: particle.x)
 
         # Pokazywanie pozycji cząsteczek
-        self.show_box()
+        self.show_box(program_window)
 
         # Liczenie entropii
         # TODO
@@ -136,17 +139,20 @@ class Box:
         # TODO
 
 
-b = Box(width=100.0, height=100.0, start_width=20.0, max_v=1.0, collision_distance=1.0)
+b = Box(width=800.0, height=600.0, start_width=20, max_v=1.0, collision_distance=2.0)
+b.create_particles(300)
 
-b.create_particles(5)
+# Start okna
+pygame.init()
+screen = pygame.display.set_mode((int(b.width), int(b.height)))
+end_program = False
 
-for p in b.particles:
-    print(p)
+# Pętla programu
+while not end_program:
+    # Kliknięcie w zamknięcie okna
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            end_program = True
 
-for _ in range(1000):
-    b.simulate()
+    b.simulate(screen)
 
-print("\n")
-
-for p in b.particles:
-    print(p)
