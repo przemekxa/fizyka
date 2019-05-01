@@ -26,8 +26,9 @@ Pudełko, w którym poruszają się cząsteczki
   - losowe współrzędne wektora prędkości (ograniczone przez `maxV`)
 - `detect_particle_collisions()` - wykrywanie zderzeń cząsteczek ze sobą
 - `detect_wall_collisions()` - wykrywanie i obsługa zderzeń ze ścianami **(do zrobienia)**
-- `show_box()` - pokazywanie pozycji cząsteczek w formie graficznej **(do zrobienia)**
+- `show_box()` - pokazywanie pozycji cząsteczek na ekranie
 - `simulate()` - symulacja "1 sekundy" ruchu cząsteczek
+- `start()` - pętla symulacji (zamknięcie okna kończy symulację)
 
 <br>
 
@@ -37,6 +38,6 @@ Pudełko, w którym poruszają się cząsteczki
 - [x] szkielet
 - [ ] kolizje ze ścianami
 - [ ] kolizje cząsteczek ze sobą
-- [ ] pokazywanie pozycji cząsteczek
+- [x] pokazywanie pozycji cząsteczek
 - [ ] liczenie entropii
 - [ ] wykres entropii
