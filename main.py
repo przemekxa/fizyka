@@ -38,10 +38,10 @@ class Particle:
     def __str__(self) -> str:
         return "particle([{:.2f}, {:.2f}, {})".format(self.x, self.y, self.v)
 
-    def move(self):
+    def move(self, t: float):
         """ Przesuń cząsteczkę zgodnie z wektorem prędkości """
-        self.x += self.v.x
-        self.y += self.v.y
+        self.x += t * self.v.x
+        self.y += t * self.v.y
 
     def distance_to(self, to: "Particle") -> float:
         """ Odległość od innej cząsteczki """
@@ -57,7 +57,7 @@ class Box:
 
     """ Pudełko, w którym poruszają się cząsteczki  """
 
-    def __init__(self, width: float, height: float, start_width: float, max_v: float, collision_distance: float):
+    def __init__(self, width: float, height: float, start_width: float, W: float, radius: float):
         # Wymiary pudełka
         self.width = width
         self.height = height
@@ -66,10 +66,10 @@ class Box:
         self.startWidth = start_width
 
         # Maksymalna wartość składowych prędkości
-        self.maxV = max_v
+        self.W = W
 
-        # Odległość przy której dochodzi do zderzenia
-        self.collision_distance = collision_distance
+        # Promień pojedynczej cząsteczki
+        self.radius = radius
 
         # Okno, w którym cząsteczki będą wyświetlane
         self.screen = None
@@ -77,15 +77,18 @@ class Box:
     def detect_wall_collisions(self):
         """ Wykrywanie i obsługa zderzeń ze ścianami """
         # TODO
+
+        collision_distance = 1.01 * self.radius
+
         for p in self.particles:
 
-            if p.x <= self.collision_distance and p.v.x < 0:
+            if p.x <= collision_distance and p.v.x < 0:
                 p.v.x *= -1
-            elif p.x >= (self.width - self.collision_distance) and p.v.x > 0:
+            elif p.x >= (self.width - collision_distance) and p.v.x > 0:
                 p.v.x *= -1
-            if p.y <= self.collision_distance and p.v.y < 0:
+            if p.y <= collision_distance and p.v.y < 0:
                 p.v.y *= -1
-            elif p.y >= (self.height - self.collision_distance) and p.v.y > 0:
+            elif p.y >= (self.height - collision_distance) and p.v.y > 0:
                 p.v.y *= -1
 
     def detect_particle_collisions(self):
@@ -93,8 +96,8 @@ class Box:
         for i in range(len(self.particles)):
 
             j = i+1
-            while j<len(self.particles) and self.particles[j].x - self.particles[i].x <= self.collision_distance:
-                if self.particles[i].distance_to(self.particles[j]) <= self.collision_distance:
+            while j < len(self.particles) and self.particles[j].x - self.particles[i].x <= (2.01 * self.radius):
+                if self.particles[i].distance_to(self.particles[j]) <= (2.01 * self.radius):
                     self.particles[i].collide_with(self.particles[j])
                 j += 1
 
@@ -102,17 +105,17 @@ class Box:
         """ Pokazywanie pozycji cząsteczek na ekranie """
         self.screen.fill((0, 0, 0))
         for particle in self.particles:
-            pygame.draw.circle(self.screen, (0, 255, 255), [int(particle.x), int(particle.y)], int(self.collision_distance))
+            pygame.draw.circle(self.screen, (0, 255, 255), [int(particle.x), int(particle.y)], int(self.radius))
         pygame.display.flip()
 
     def create_particles(self, n: int):
         """ Tworzenie n cząsteczek
             - cząsteczki o losowych współrzędnych, współrzędna x ograniczona przez startWidth
-            - losowe współrzędne wektora prędkości (ograniczone przez maxV)
+            - losowe współrzędne wektora prędkości (ograniczone przez W)
         """
         self.particles = []
         for i in range(n):
-            v = Vector((random.random() * 2 *self.maxV) - self.maxV, (random.random() * 2 * self.maxV) - self.maxV)
+            v = Vector((random.random() * 2 * self.W) - self.W, (random.random() * 2 * self.W) - self.W)
             p = Particle(random.random() * self.startWidth, random.random() * self.height, v)
             self.particles.append(p)
 
@@ -121,7 +124,7 @@ class Box:
 
         # Przesunięcie cząsteczek o wektor
         for p in self.particles:
-            p.move()
+            p.move(1.0 / (1.0 * self.W))
 
         # Wykrywanie zderzeń ze ścianami
         self.detect_wall_collisions()
@@ -162,7 +165,7 @@ class Box:
             self.simulate()
 
 
-b = Box(width=800.0, height=600.0, start_width=20, max_v=1.0, collision_distance=2.0)
+b = Box(width=800.0, height=600.0, start_width=20, W=2.0, radius=0.1)
 b.create_particles(300)
 b.start()
 

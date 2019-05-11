@@ -9,18 +9,18 @@ Wektor o współrzędnych `x: float` i `y: float`
 
 ### `Particle`
 Pojednycza cząsteczka o współrzędnych `x: float` i `y : float` oraz wektorze prędkości `v: Vector`
-- `move()` - przesuń cząsteczkę zgodnie z wektorem prędkości
+- `move(t: float)` - przesuń cząsteczkę zgodnie z wektorem prędkości i krokiem czasu Δt
 - `distance_to(Particle)` - odległość między cząsteczkami
 - `collide_with(Particle)` - zderzenie dwóch cząsteczek **(do zrobienia)**
 
 ### `Box`
 Pudełko, w którym poruszają się cząsteczki
-- `Box(width: float, height: float, start_width: float, max_v: float, collision_distance: float)` - inicjalizacja
+- `Box(width: float, height: float, start_width: float, W: float, radius: float)` - inicjalizacja
   - `width: float` - szerokość pudełka
   - `height: float` - wysokość pudełka
   - `start_width: float` - początkowa szerokość pudełka (tutaj będą na początku cząsteczki)
-  - `max_v: float` - maksymalne początkowe wartości współrzędnych wektora prędkości
-  - `collision_distance: float` - odległość, przy której zakładamy, że doszło do zderzenia
+  - `W: float` - maksymalne początkowe wartości współrzędnych wektora prędkości
+  - `radius: float` - promień pojedynczej cząsteczki
 - `create_particles(int)` - tworzenie n cząsteczek
   - cząsteczki o losowych współrzędnych, współrzędna `x` ograniczona przez `startWidth`
   - losowe współrzędne wektora prędkości (ograniczone przez `maxV`)
