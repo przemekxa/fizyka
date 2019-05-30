@@ -178,16 +178,16 @@ class Box:
 
             if p.x <= collision_distance and p.v.x < 0:
                 p.v.x *= -1
-                p.x = 0 + collision_distance
+            
             elif p.x >= (self.width - collision_distance) and p.v.x > 0:
                 p.v.x *= -1
-                p.x = (self.width - collision_distance)
+            
             if p.y <= collision_distance and p.v.y < 0:
                 p.v.y *= -1
-                p.y = 0 + collision_distance
+            
             elif p.y >= (self.height - collision_distance) and p.v.y > 0:
                 p.v.y *= -1
-                p.y = (self.height - collision_distance)
+    
 
     def detect_particle_collisions(self):
         """ Wykrywanie zderzeń cząsteczek ze sobą """
@@ -253,18 +253,26 @@ class Box:
     def set_plot(self ):
         plt.show()
         axes = plt.gca()
-        # Skala ox
+        # Skala osi
         axes.set_xlim(0, 2000)
-        # Skala oy
         axes.set_ylim(0, 100)
+        # Opisy osi
+        axes.set_xlabel('tick')
+        axes.set_ylabel('entropia')
+        # Tytul
+        axes.set_title('Entropia')
+                        
         self.line, = axes.plot( [], [], 'r-')
     
         
     def update_plot(self, new_x, new_y):
+        # Dodaj do tablicy danych nowe dane
         self.wykres_ydata.append( new_y )
         self.wykres_xdata.append( new_x )
+        # Zaktualizuj zrodlo danych do wykresu
         self.line.set_xdata(self.wykres_xdata)
         self.line.set_ydata(self.wykres_ydata)
+        # Narysuj zaktualizowany wykres
         plt.draw()
         plt.pause(1e-17)
     
