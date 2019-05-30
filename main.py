@@ -1,6 +1,8 @@
 import math
 import random
 
+import matplotlib.pyplot as plt
+
 import pygame
 
 
@@ -26,8 +28,8 @@ class Vector:
 
 class Particle:
     """ Pojedyncza cząsteczka o współrzędnych x i y oraz prędkości v
-        (w przyszłości można dodać jej promień)
-    """
+        (w przyszłości można dodać jej promień) """
+    
 
     def __init__(self, x: float, y: float, v: Vector):
         self.x = x
@@ -49,18 +51,21 @@ class Particle:
     def collide_with(self, x: "Particle", W: float, r: float):
         """ Zderzenie dwóch cząsteczek """
         # TODO
-
+        
         v1 = self.v.value
         v2 = x.v.value
         angle1 = math.acos(self.v.x / v1)
+        #tutaj
         #if self.v.y < 0:
-            #angle1 *= -1
+        #    angle1 *= -1
         angle2 = math.acos(x.v.x / v2)
+        #tutaj
         #if self.v.y < 0:
-            #angle2 *= -1
+        #    angle2 *= -1
         contact_angle = math.atan2((self.y - x.y), (self.x - x.x))
+        #tutaj
         #if contact_angle > 0:
-            #contact_angle -= 2 * math.pi
+        #    contact_angle -= 2 * math.pi
         #contact_angle *= -1
 
         self.v.x = (v2 * math.cos(angle2 - contact_angle)) * math.cos(contact_angle) + v1 * math.sin(
@@ -152,7 +157,16 @@ class Box:
         self.tps_delta = 0.0
 
         # Liczba klatek na sekunde
-        self.tps_max = 60.0
+        self.tps_max = 30.0
+        
+        # Ilosc wykonanych symulacji
+        self.times_simulated = 0
+    
+        # Wykres dane
+        self.wykres_xdata = []
+        self.wykres_ydata = []
+        self.wykres_line = None
+        
 
     def detect_wall_collisions(self):
         """ Wykrywanie i obsługa zderzeń ze ścianami """
@@ -164,12 +178,16 @@ class Box:
 
             if p.x <= collision_distance and p.v.x < 0:
                 p.v.x *= -1
+                p.x = 0 + collision_distance
             elif p.x >= (self.width - collision_distance) and p.v.x > 0:
                 p.v.x *= -1
+                p.x = (self.width - collision_distance)
             if p.y <= collision_distance and p.v.y < 0:
                 p.v.y *= -1
+                p.y = 0 + collision_distance
             elif p.y >= (self.height - collision_distance) and p.v.y > 0:
                 p.v.y *= -1
+                p.y = (self.height - collision_distance)
 
     def detect_particle_collisions(self):
         """ Wykrywanie zderzeń cząsteczek ze sobą """
@@ -201,6 +219,9 @@ class Box:
 
     def simulate(self):
         """ Symulacja '1 sekundy' ruchu cząsteczek """
+        
+        # Numer symulacji
+        self.times_simulated += 1
 
         # Przesunięcie cząsteczek o wektor
         for p in self.particles:
@@ -218,12 +239,36 @@ class Box:
         # Pokazywanie pozycji cząsteczek
         self.show_box()
 
-        # Liczenie entropii
-        # TODO
+        # co 1 sekunde symulacji
+        if self.times_simulated % self.tps_max == 1:
+            # Liczenie entropii
+            # TODO
+            entropia = random.randint(0,100)
+            
+            
+            self.wykres_ydata.append( entropia )
+            self.wykres_xdata.append( self.times_simulated )
 
-        # Pokazywanie wykresu
-        # TODO
+            # Pokazywanie wykresu
+            self.update_plot()
 
+    def set_plot(self ):
+        plt.show()
+        axes = plt.gca()
+        # Skala ox
+        axes.set_xlim(0, 2000)
+        # Skala oy
+        axes.set_ylim(0, 100)
+        self.line, = axes.plot( [], [], 'r-')
+    
+        
+    def update_plot(self):
+        self.line.set_xdata(self.wykres_xdata)
+        self.line.set_ydata(self.wykres_ydata)
+        plt.draw()
+        plt.pause(1e-17)
+    
+        
     def start(self):
         """ Pętla symulacji """
 
@@ -233,20 +278,28 @@ class Box:
         # Inicjalizacja okna
         self.screen = pygame.display.set_mode((int(self.width), int(self.height)))
         end_program = False
-
+        
+        # Start wykresu
+        self.set_plot()
+        
+        
         # Pętla programu
         while not end_program:
-
+            
             # Kliknięcie w zamknięcie okna
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     end_program = True
+        
             self.tps_delta += self.tps_clock.tick() / 1000.0
             while self.tps_delta > 1.0 / self.tps_max:
                 self.simulate()
                 self.tps_delta -= 1.0 / self.tps_max
 
 
+
 b = Box(width=500.0, height=375.0, start_width=100, W=2.0, radius=3)
-b.create_particles(100)
+b.create_particles(50)
 b.start()
+
+
