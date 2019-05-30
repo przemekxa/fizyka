@@ -1,8 +1,6 @@
 import math
 import random
-
 import matplotlib.pyplot as plt
-
 import pygame
 
 
@@ -93,12 +91,13 @@ class Particle:
         elif x.v.y < -W:
             x.v.y = -W
         n = 0
-        while self.distance_to(x) < 2 * r and n < 5:
-            self.x += self.v.x
-            self.y += self.v.y
-            x.x += x.v.x
-            x.y += x.v.y
-            n += 1
+        
+        #while self.distance_to(x) < 2 * r and n < 5:
+        #    self.x += self.v.x
+        #    self.y += self.v.y
+        #    x.x += x.v.x
+        #    x.y += x.v.y
+        #    n += 1
         """
 
         contact_angle = math.atan2((self.y - x.y), (self.x - x.x))
@@ -162,7 +161,7 @@ class Box:
         # Ilosc wykonanych symulacji
         self.times_simulated = 0
     
-        # Wykres dane
+        # Dane wykresu
         self.wykres_xdata = []
         self.wykres_ydata = []
         self.wykres_line = None
@@ -229,10 +228,10 @@ class Box:
 
         # Wykrywanie zderzeń ze ścianami
         self.detect_wall_collisions()
-
+        
         # Wykrywanie zderzeń z cząsteczkami
         self.detect_particle_collisions()
-
+        
         # Sortowanie tablicy cząsteczek
         self.particles.sort(key=lambda particle: particle.x)
 
@@ -241,6 +240,7 @@ class Box:
 
         # co 1 sekunde symulacji
         if self.times_simulated % self.tps_max == 1:
+            
             # Liczenie entropii
             # TODO
             entropia = random.randint(0,100)
