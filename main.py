@@ -246,11 +246,9 @@ class Box:
             entropia = random.randint(0,100)
             
             
-            self.wykres_ydata.append( entropia )
-            self.wykres_xdata.append( self.times_simulated )
-
+            
             # Pokazywanie wykresu
-            self.update_plot()
+            self.update_plot( self.times_simulated, entropia)
 
     def set_plot(self ):
         plt.show()
@@ -262,7 +260,9 @@ class Box:
         self.line, = axes.plot( [], [], 'r-')
     
         
-    def update_plot(self):
+    def update_plot(self, new_x, new_y):
+        self.wykres_ydata.append( new_y )
+        self.wykres_xdata.append( new_x )
         self.line.set_xdata(self.wykres_xdata)
         self.line.set_ydata(self.wykres_ydata)
         plt.draw()
