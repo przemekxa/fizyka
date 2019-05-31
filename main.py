@@ -2,6 +2,8 @@ import math
 import random
 import matplotlib.pyplot as plt
 import pygame
+import os #pozycja okna animacji
+
 
 
 class Vector:
@@ -22,6 +24,13 @@ class Vector:
     def value(self) -> float:
         """ Wartość wektora """
         return math.sqrt(self.x ** 2 + self.y ** 2)
+    @property
+    def angle(self):
+        """ Wartość kąta """
+        b = math.acos(self.x / self.value)
+        if self.y < 0:
+            b = math.radians(360) - b
+        return b
 
 
 class Particle:
@@ -52,54 +61,23 @@ class Particle:
         
         v1 = self.v.value
         v2 = x.v.value
-        angle1 = math.acos(self.v.x / v1)
-        #tutaj
-        #if self.v.y < 0:
-        #    angle1 *= -1
-        angle2 = math.acos(x.v.x / v2)
-        #tutaj
-        #if self.v.y < 0:
-        #    angle2 *= -1
+        angle1 = self.v.angle
+        angle2 = x.v.angle
         contact_angle = math.atan2((self.y - x.y), (self.x - x.x))
-        #tutaj
-        #if contact_angle > 0:
-        #    contact_angle -= 2 * math.pi
-        #contact_angle *= -1
 
         self.v.x = (v2 * math.cos(angle2 - contact_angle)) * math.cos(contact_angle) + v1 * math.sin(
             angle1 - contact_angle) * math.sin(contact_angle)
-        if self.v.x > W:
-            self.v.x = W
-        elif self.v.x < -W:
-            self.v.x = -W
+
         self.v.y = (v2 * math.cos(angle2 - contact_angle)) * math.sin(contact_angle) + v1 * math.sin(
             angle1 - contact_angle) * math.cos(contact_angle)
-        if self.v.y > W:
-            self.v.y = W
-        elif self.v.y < -W:
-            self.v.y = -W
+
         x.v.x = (v1 * math.cos(angle1 - contact_angle)) * math.cos(contact_angle) + v2 * math.sin(
             angle2 - contact_angle) * math.sin(contact_angle)
-        if x.v.x > W:
-            x.v.x = W
-        elif x.v.x < -W:
-            x.v.x = -W
+
         x.v.y = (v1 * math.cos(angle1 - contact_angle)) * math.sin(contact_angle) + v2 * math.sin(
             angle2 - contact_angle) * math.cos(contact_angle)
-        if x.v.y > W:
-            x.v.y = W
-        elif x.v.y < -W:
-            x.v.y = -W
-        n = 0
-        
-        #while self.distance_to(x) < 2 * r and n < 5:
-        #    self.x += self.v.x
-        #    self.y += self.v.y
-        #    x.x += x.v.x
-        #    x.y += x.v.y
-        #    n += 1
-        """
 
+        """
         contact_angle = math.atan2((self.y - x.y), (self.x - x.x))
         self.v.x = self.v.x*math.sin(contact_angle) + x.v.x*math.cos(contact_angle)
         self.v.y = self.v.y*math.sin(contact_angle) + x.v.y*math.cos(contact_angle)
@@ -111,28 +89,13 @@ class Particle:
             x.x += x.v.x
             x.y += x.v.y
         """
-        """
-        v1 = self.v.value - ((self.v.x - x.v.x)*(self.x - x.x) + (self.v.y - x.v.y)*(self.y-x.y))/(
-            math.sqrt((self.x-x.x)**2 + (self.y-x.y)**2)*(
-                math.sqrt(self.x ** 2 + self.y ** 2) - math.sqrt(x.x ** 2 + x.y ** 2)))
-        v2 = x.v.value - ((x.v.x - self.v.x)*(x.x - self.x) + (x.v.y - self.v.y)*(x.y - self.y))/(
-            math.sqrt((x.x-self.x)**2 + (x.y-self.y)**2)*(
-                math.sqrt(x.x**2 + x.y**2) - math.sqrt(self.x**2 + self.y**2)))
-        vec = Vector(5,1)
-        angle1 = math.acos(v1 / vec.x)
-        angle2 = math.acos(v2 / vec.x)
-        self.v.x = v1*math.cos(angle1)
-        self.v.y = v1*math.sin(angle1)
-        x.v.x = v2*math.cos(angle2)
-        x.v.y = v2*math.sin(angle2)
-        """
         return
 
 
 class Box:
     """ Pudełko, w którym poruszają się cząsteczki  """
 
-    def __init__(self, width: float, height: float, start_width: float, W: float, radius: float):
+    def __init__(self, width: float, height: float, start_width: float, W: float, radius: float, grid_s_R: int, grid_s_V: int):
         # Wymiary pudełka
         self.width = width
         self.height = height
@@ -165,6 +128,11 @@ class Box:
         self.wykres_xdata = []
         self.wykres_ydata = []
         self.wykres_line = None
+
+        # Stany i liczba kul
+        self.grid_R = grid_s_R
+        self.grid_V = grid_s_V
+        self.state = [[[[0]*grid_s_V]*grid_s_V]*grid_s_R]*grid_s_R
         
 
     def detect_wall_collisions(self):
@@ -191,11 +159,13 @@ class Box:
     def detect_particle_collisions(self):
         """ Wykrywanie zderzeń cząsteczek ze sobą """
 
+        collision_distance = 1.0000001 * 2 * self.radius
+
         for i in range(len(self.particles)):
 
             j = i + 1
-            while j < len(self.particles) and self.particles[j].x - self.particles[i].x <= (2.02 * self.radius):
-                if self.particles[i].distance_to(self.particles[j]) <= (2.02 * self.radius):
+            while j < len(self.particles) and self.particles[j].x - self.particles[i].x <= collision_distance:
+                if self.particles[i].distance_to(self.particles[j]) <= collision_distance:
                     self.particles[i].collide_with(self.particles[j], self.W, self.radius)
                 j += 1
     def show_box(self):
@@ -215,6 +185,52 @@ class Box:
             v = Vector((random.random() * 2 * self.W) - self.W, (random.random() * 2 * self.W) - self.W)
             p = Particle(random.random() * self.startWidth, random.random() * self.height, v)
             self.particles.append(p)
+
+    def update_states(self):
+        self.state = [[[[0]*self.grid_V]*self.grid_V]*self.grid_R]*self.grid_R
+        for prtcl in self.particles:
+            Rx = int( prtcl.x/(self.grid_R*self.width) )
+            if Rx >= self.grid_R:
+                Rx = self.grid_R - 1
+            if Rx < 0:
+                Rx = 0
+
+            Ry = int( prtcl.y/(self.grid_R*self.height) )
+            if Ry >= self.grid_R:
+                Ry = self.grid_R - 1
+            if Ry < 0:
+                Ry = 0
+
+            Vx = int( (prtcl.v.x + self.W)/(2*self.W/self.grid_V) )
+            if Vx >= self.grid_V:
+                Vx = self.grid_V - 1
+            if Vx < 0:
+                Vx = 0
+
+            Vy = int( (prtcl.v.y + self.W)/(2*self.W/self.grid_V) )
+            if Vy >= self.grid_V:
+                Vy = self.grid_V - 1
+            if Vy < 0:
+                Vy = 0
+            #print( Rx, Ry, Vx, Vy )
+            self.state[Rx][Ry][Vx][Vy] += 1
+    
+
+    def calculate_entropy(self):
+        S = 0.0
+        N = self.grid_V**2 * self.grid_R**2
+        S = N * math.log(N) - N
+        self.update_states()
+        for Rx in range(self.grid_R):
+            for Ry in range(self.grid_R):
+                for Vx in range(self.grid_V):
+                    for Vy in range(self.grid_V):
+                        if self.state[Rx][Ry][Vx][Vy] > 0:
+                            n = self.state[Rx][Ry][Vx][Vy]
+                            S -= n * math.log(n) - n
+        return S * -1.38
+
+
 
     def simulate(self):
         """ Symulacja '1 sekundy' ruchu cząsteczek """
@@ -242,10 +258,8 @@ class Box:
         if self.times_simulated % self.tps_max == 1:
             
             # Liczenie entropii
-            # TODO
-            entropia = random.randint(0,100)
-            
-            
+            entropia = self.calculate_entropy()
+            print( entropia )
             
             # Pokazywanie wykresu
             self.update_plot( self.times_simulated, entropia)
@@ -255,9 +269,9 @@ class Box:
         axes = plt.gca()
         # Skala osi
         axes.set_xlim(0, 2000)
-        axes.set_ylim(0, 100)
+        axes.set_ylim(1000000, 1200000)
         # Opisy osi
-        axes.set_xlabel('tick')
+        axes.set_xlabel('tick [*10^(-23)]')
         axes.set_ylabel('entropia')
         # Tytul
         axes.set_title('Entropia')
@@ -284,6 +298,7 @@ class Box:
         pygame.init()
 
         # Inicjalizacja okna
+        os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (750,0)
         self.screen = pygame.display.set_mode((int(self.width), int(self.height)))
         end_program = False
         
@@ -305,9 +320,11 @@ class Box:
                 self.tps_delta -= 1.0 / self.tps_max
 
 
-
-b = Box(width=500.0, height=375.0, start_width=100, W=2.0, radius=3)
-b.create_particles(50)
+b = Box(width=500.0, height=375.0, start_width=100, W=2.0, radius=3, grid_s_R=10, grid_s_V=4)
+b.create_particles(500)
 b.start()
+
+#CTRL+F os.environ (pozycja startowa okna)
+
 
 
