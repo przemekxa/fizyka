@@ -2,8 +2,7 @@ import math
 import random
 import matplotlib.pyplot as plt
 import pygame
-import os #pozycja okna animacji
-
+import os  # pozycja okna animacji
 
 
 class Vector:
@@ -20,10 +19,20 @@ class Vector:
     def __str__(self) -> str:
         return "vector({:.2f}, {:.2f})".format(self.x, self.y)
 
+    def __mul__(self, other: float) -> "Vector":
+        return Vector(other*self.x, other*self.y)
+
+    def dot(self, other: "Vector") -> float:
+        return self.x*other.x + self.y*other.y
+
+    def __sub__(self, other: "Vector") -> "Vector":
+        return Vector(self.x - other.x, self.y - other.y)
+
     @property
     def value(self) -> float:
         """ Wartość wektora """
         return math.sqrt(self.x ** 2 + self.y ** 2)
+
     @property
     def angle(self):
         """ Wartość kąta """
@@ -36,7 +45,6 @@ class Vector:
 class Particle:
     """ Pojedyncza cząsteczka o współrzędnych x i y oraz prędkości v
         (w przyszłości można dodać jej promień) """
-    
 
     def __init__(self, x: float, y: float, v: Vector):
         self.x = x
@@ -57,40 +65,42 @@ class Particle:
 
     def collide_with(self, x: "Particle", W: float, r: float):
         """ Zderzenie dwóch cząsteczek """
-        # TODO
+        linia = Vector(self.x - x.x, self.y - x.y)
+        wersor = linia*(1/linia.value)
+
+        self_row = wersor*self.v.dot(wersor)
+        self_pro = self.v - self_row
+
+        x_row = wersor*x.v.dot(wersor)
+        x_pro = x.v - x_row
+
+        self.v = self_pro + x_row
+        x.v = x_pro + self_row
+
         
-        v1 = self.v.value
-        v2 = x.v.value
-        angle1 = self.v.angle
-        angle2 = x.v.angle
-        contact_angle = math.atan2((self.y - x.y), (self.x - x.x))
+        if x.v.x > W:
+            x.v.x = W
+        if x.v.y > W:
+            x.v.y = W
+        if x.v.x < -W:
+            x.v.x = -W
+        if x.v.y < -W:
+            x.v.y = -W
 
-        self.v.x = (v2 * math.cos(angle2 - contact_angle)) * math.cos(contact_angle) + v1 * math.sin(
-            angle1 - contact_angle) * math.sin(contact_angle)
-
-        self.v.y = (v2 * math.cos(angle2 - contact_angle)) * math.sin(contact_angle) + v1 * math.sin(
-            angle1 - contact_angle) * math.cos(contact_angle)
-
-        x.v.x = (v1 * math.cos(angle1 - contact_angle)) * math.cos(contact_angle) + v2 * math.sin(
-            angle2 - contact_angle) * math.sin(contact_angle)
-
-        x.v.y = (v1 * math.cos(angle1 - contact_angle)) * math.sin(contact_angle) + v2 * math.sin(
-            angle2 - contact_angle) * math.cos(contact_angle)
-
-
-
-        """
-        contact_angle = math.atan2((self.y - x.y), (self.x - x.x))
-        self.v.x = self.v.x*math.sin(contact_angle) + x.v.x*math.cos(contact_angle)
-        self.v.y = self.v.y*math.sin(contact_angle) + x.v.y*math.cos(contact_angle)
-        x.v.x = x.v.x*math.sin(contact_angle) + self.v.x*math.cos(contact_angle)
-        x.v.y = x.v.y*math.sin(contact_angle) + self.v.y*math.cos(contact_angle)
-        while self.distance_to(x) < 2.0*r:
-            self.x += self.v.x
-            self.y += self.v.y
-            x.x += x.v.x
-            x.y += x.v.y
-        """
+        if self.v.x > W:
+            self.v.x = W
+        if self.v.y > W:
+            self.v.y = W
+        if self.v.x < -W:
+            self.v.x = -W
+        if self.v.y < -W:
+            self.v.y = -W
+        
+        #odklejanie, jezeli pojawia sie w sobie
+        while self.distance_to( x ) <= 2*r: 
+            self.move( 1.0 / (1 * W) )
+            x.move( 1.0 / (1 * W) ) 
+        
         return
 
 
@@ -135,7 +145,6 @@ class Box:
         self.grid_R = grid_s_R
         self.grid_V = grid_s_V
         self.state = [[[[0]*grid_s_V]*grid_s_V]*grid_s_R]*grid_s_R
-        
 
     def detect_wall_collisions(self):
         """ Wykrywanie i obsługa zderzeń ze ścianami """
@@ -155,7 +164,6 @@ class Box:
             
             elif p.y >= (self.height - collision_distance) and p.v.y > 0:
                 p.v.y *= -1
-    
 
     def detect_particle_collisions(self):
         """ Wykrywanie zderzeń cząsteczek ze sobą """
@@ -169,6 +177,7 @@ class Box:
                 if self.particles[i].distance_to(self.particles[j]) <= collision_distance:
                     self.particles[i].collide_with(self.particles[j], self.W, self.radius)
                 j += 1
+
     def show_box(self):
         """ Pokazywanie pozycji cząsteczek na ekranie """
         self.screen.fill((0, 0, 0))
@@ -213,9 +222,9 @@ class Box:
                 Vy = self.grid_V - 1
             if Vy < 0:
                 Vy = 0
+
             #print( Rx, Ry, Vx, Vy )
             self.state[Rx][Ry][Vx][Vy] += 1
-    
 
     def calculate_entropy(self):
         S = 0.0
@@ -231,10 +240,8 @@ class Box:
                             S -= n * math.log(n) - n
         return S * -1.38
 
-
-
     def simulate(self):
-        """ Symulacja 1 klatki ruchu cząsteczek """
+        """ Symulacja '1 sekundy' ruchu cząsteczek """
         
         # Numer symulacji
         self.times_simulated += 1
@@ -255,8 +262,8 @@ class Box:
         # Pokazywanie pozycji cząsteczek
         self.show_box()
 
-        # co 1/3 sekunde symulacji
-        if self.times_simulated % (self.tps_max/3) == 1:
+        # co 1 sekunde symulacji
+        if self.times_simulated % self.tps_max == 1:
             
             # Liczenie entropii
             entropia = self.calculate_entropy()
@@ -269,17 +276,16 @@ class Box:
         plt.show()
         axes = plt.gca()
         # Skala osi
-        axes.set_xlim(0, 2500)
-        axes.set_ylim(0, 1000000)
+        axes.set_xlim(0, 4000)
+        axes.set_ylim(200000, 500000)
         # Opisy osi
-        axes.set_xlabel('time [1/30s]')
+        axes.set_xlabel('1/30 [s]')
         axes.set_ylabel('entropia *10^(23)')
         # Tytul
         axes.set_title('Entropia')
                         
         self.line, = axes.plot( [], [], 'r-')
-    
-        
+
     def update_plot(self, new_x, new_y):
         # Dodaj do tablicy danych nowe dane
         self.wykres_ydata.append( new_y )
@@ -290,8 +296,7 @@ class Box:
         # Narysuj zaktualizowany wykres
         plt.draw()
         plt.pause(1e-17)
-    
-        
+
     def start(self):
         """ Pętla symulacji """
 
@@ -321,10 +326,9 @@ class Box:
                 self.tps_delta -= 1.0 / self.tps_max
 
 
-b = Box(width=500.0, height=375.0, start_width=100, W=2.0, radius=7, grid_s_R=20, grid_s_V=10)
+b = Box(width=500.0, height=375.0, start_width=100, W=2.0, radius=5, grid_s_R=20, grid_s_V=10)
 b.create_particles(100)
 b.start()
 
+#Jezeli okno animacji jest poza ekranem
 #CTRL+F os.environ (pozycja startowa okna)
-
-
